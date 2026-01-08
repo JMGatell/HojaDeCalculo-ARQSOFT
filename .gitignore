@@ -1,8 +1,9 @@
 # Java compilado
 *.class
+bin/
 
 # VS Code
 .vscode/
 
-# Sistema macOS
+# macOS
 .DS_Store
