@@ -1,3 +1,6 @@
+import java.util.List;
+import java.util.Set;
+
 public final class SpreadsheetController {
 
     private final HojaCalculo hoja;
@@ -23,10 +26,25 @@ public final class SpreadsheetController {
         // 4) Asignar contenido a la celda (esto actualiza valor "por defecto")
         celda.setContenido(contenido);
 
-        // 5) Si es fórmula -> evaluar (Fase 2)
+        // 5) Si es fórmula -> registrar dependencias y evaluar
         if (contenido instanceof ContenidoFormula) {
-            // Por ahora: dejamos el placeholder en la celda (ContenidoFormula.getValor() da "#FORMULA")
-            // En la siguiente fase: FormulaService.evaluarFormula(celda, hoja) y celda.setValor(resultado)
+            String expr = contenidoRaw.substring(1); // quitar '='
+
+            // 5.1) Extraer dependencias directas de la fórmula y registrarlas en la hoja
+            List<Token> tokens = Tokenizer.tokenize(expr);
+            Set<Coordenada> deps = CalculadoraDeDependencias.extraerDependencias(tokens);
+            hoja.setDependencias(coord, deps);
+
+            if (CalculadoraDeDependencias.hayDependenciaCircular(hoja, coord)) {
+            throw new IllegalArgumentException("Dependencia circular detectada");
+        }
+
+            // 5.2) Evaluar la fórmula y guardar su valor
+            double resultado = FormulaService.evaluate(expr, hoja);
+            celda.setValor(Valor.numero(resultado));
+        } else {
+            // Si deja de ser fórmula, eliminamos dependencias previas
+            hoja.setDependencias(coord, Set.of());
         }
 
         // 6) Recalcular dependientes (Fase 3)

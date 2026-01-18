@@ -1,28 +1,38 @@
 public final class Valor {
-    private final Double numero;  // null si no es número
-    private final String texto;   // null si no es texto
+
+    private final Double numero; // null si es texto
+    private final String texto;  // null si es número
 
     private Valor(Double numero, String texto) {
         this.numero = numero;
         this.texto = texto;
     }
 
-    public static Valor numero(double n) { return new Valor(n, null); }
-    public static Valor texto(String t)  { return new Valor(null, t); }
+    public static Valor numero(double n) {
+        return new Valor(n, null);
+    }
 
-    public boolean esNumero() { return numero != null; }
-    public boolean esTexto()  { return texto != null; }
+    public static Valor texto(String s) {
+        if (s == null) s = "";
+        return new Valor(null, s);
+    }
 
-    public double asDouble() {
+    public boolean esNumero() {
+        return numero != null;
+    }
+
+    public double comoNumero() {
         if (numero == null) throw new IllegalStateException("El valor no es numérico");
         return numero;
     }
 
-    public String asString() {
-        if (texto != null) return texto;
-        if (numero != null) return String.valueOf(numero);
-        return "";
+    public String comoTexto() {
+        if (texto == null) return Double.toString(numero);
+        return texto;
     }
 
-    @Override public String toString() { return asString(); }
+    @Override
+    public String toString() {
+        return (texto != null) ? texto : Double.toString(numero);
+    }
 }

@@ -15,22 +15,24 @@ public class PostfixEvaluator {
                     break;
 
                 case CELL_REF:
-                    // HojaCalculo.getCelda(...) espera una Coordenada, no un String
                     Celda celdaRef = hoja.getCelda(Coordenada.parse(t.getLexeme()));
-                    Valor valorRef = celdaRef.getValor();
+                    if (celdaRef == null) {
+                        throw new IllegalArgumentException(
+                            "La celda " + t.getLexeme() + " no existe");
+                    }
 
-                    // Convertimos el valor a número de la forma más compatible posible
+                    Valor valorRef = celdaRef.getValor();
                     if (valorRef == null) {
                         throw new IllegalArgumentException(
-                                "La celda " + t.getLexeme() + " no tiene valor");
+                            "La celda " + t.getLexeme() + " no tiene valor");
                     }
 
-                    try {
-                        stack.push(Double.parseDouble(valorRef.toString()));
-                    } catch (NumberFormatException ex) {
+                    if (!valorRef.esNumero()) {
                         throw new IllegalArgumentException(
-                                "La celda " + t.getLexeme() + " no contiene un valor numérico");
+                            "La celda " + t.getLexeme() + " no contiene un valor numérico");
                     }
+
+                    stack.push(valorRef.comoNumero());
                     break;
 
                 case OPERATOR:
