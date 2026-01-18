@@ -12,8 +12,20 @@ public class Main {
         controller.modificarCelda("B1", "=A1+1");
         System.out.println("B1 = " + controller.consultarValor("B1"));
 
-        // Caso CON ciclo (debe lanzar excepción)
-        controller.modificarCelda("A1", "=B1+1");
+        try {
+            controller.modificarCelda("A1", "=B1+1");
+        } catch (IllegalArgumentException ex) {
+            System.out.println("ERROR: " + ex.getMessage());
+        }
 
+        Contenido c = IdentificadorDeContenido.crearContenido("=A1+2");
+        System.out.println(((ContenidoFormula)c).getExpresion());
+
+        controller.modificarCelda("A1", "5");
+        controller.modificarCelda("B1", "=A1+2");
+        System.out.println("B1 = " + controller.consultarValor("B1")); // 7
+
+        controller.modificarCelda("A1", "10");
+        System.out.println("B1 = " + controller.consultarValor("B1")); // 12  (si recalcula, está bien)
     }
 }

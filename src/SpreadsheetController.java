@@ -28,7 +28,7 @@ public final class SpreadsheetController {
 
         // 5) Si es fórmula -> registrar dependencias y evaluar
         if (contenido instanceof ContenidoFormula) {
-            String expr = contenidoRaw.substring(1); // quitar '='
+            String expr = ((ContenidoFormula) contenido).getExpresion();
 
             // 5.1) Extraer dependencias directas de la fórmula y registrarlas en la hoja
             List<Token> tokens = Tokenizer.tokenize(expr);
@@ -48,7 +48,7 @@ public final class SpreadsheetController {
         }
 
         // 6) Recalcular dependientes (Fase 3)
-        // En la siguiente fase: CalculadoraDeDependencias.recalcularDesde(celda, hoja)
+        CalculadoraDeDependencias.recalcularDesde(hoja, coord);
     }
 
     public Valor consultarValor(String coordenadaRaw) {

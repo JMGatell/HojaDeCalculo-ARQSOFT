@@ -6,7 +6,7 @@ public final class IdentificadorDeContenido {
         String s = raw.trim();
 
         if (s.startsWith("=")) {
-            return new ContenidoFormula(s);
+            return new ContenidoFormula(s.substring(1)); // guardar sin '='
         }
 
         try {

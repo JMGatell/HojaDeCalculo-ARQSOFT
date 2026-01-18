@@ -50,4 +50,32 @@ public final class CalculadoraDeDependencias {
         visitadas.add(actual);
         return false;
     }
+    /**
+     * Recalcula todas las celdas que dependen (directa o indirectamente) de 'origen'.
+     * Se apoya en el mapa inverso de dependientes almacenado en la hoja.
+     */
+    public static void recalcularDesde(HojaCalculo hoja, Coordenada origen) {
+        Set<Coordenada> visitadas = new HashSet<>();
+        dfsRecalcular(hoja, origen, visitadas);
+    }
+
+    private static void dfsRecalcular(HojaCalculo hoja, Coordenada base, Set<Coordenada> visitadas) {
+        for (Coordenada dep : hoja.getDependientesDe(base)) {
+            if (!visitadas.add(dep)) continue;
+
+            // Recalcular primero los dependientes de esta celda
+            dfsRecalcular(hoja, dep, visitadas);
+
+            // Recalcular la propia celda dependiente si contiene una fórmula
+            Celda c = hoja.getCelda(dep);
+            if (c == null) continue;
+
+            Contenido cont = c.getContenido();
+            if (cont instanceof ContenidoFormula) {
+                String expr = ((ContenidoFormula) cont).getExpresion();
+                double resultado = FormulaService.evaluate(expr, hoja);
+                c.setValor(Valor.numero(resultado));
+            }
+        }
+    }
 }
