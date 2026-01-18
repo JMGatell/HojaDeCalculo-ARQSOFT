@@ -27,5 +27,16 @@ public class Main {
 
         controller.modificarCelda("A1", "10");
         System.out.println("B1 = " + controller.consultarValor("B1")); // 12  (si recalcula, está bien)
+
+        String s2v = S2VSerializer.toS2V(hoja);
+        System.out.println("S2V:\n" + s2v);
+
+        S2VSerializer.saveToFile(hoja, "output.s2v");
+        System.out.println("Guardado en output.s2v");
+
+        HojaCalculo hoja2 = S2VLoader.loadFromFile("output.s2v");
+        SpreadsheetController c2 = new SpreadsheetController(hoja2);
+
+        System.out.println("B1 = " + c2.consultarValor("B1")); // debe ser 12.0
     }
 }
