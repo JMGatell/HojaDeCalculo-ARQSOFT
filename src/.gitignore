@@ -1,8 +1,0 @@
-# Java compilado
-*.class
-
-# VS Code
-.vscode/
-
-# Sistema macOS
-.DS_Store

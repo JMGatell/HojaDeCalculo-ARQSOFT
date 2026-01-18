@@ -1,9 +1,0 @@
-# Java compilado
-*.class
-bin/
-
-# VS Code
-.vscode/
-
-# macOS
-.DS_Store
