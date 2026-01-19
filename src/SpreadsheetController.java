@@ -20,35 +20,54 @@ public final class SpreadsheetController {
         // 2) Obtener o crear celda
         Celda celda = hoja.obtenerOCrearCelda(coord);
 
-        // 3) Identificar y crear contenido
-        Contenido contenido = IdentificadorDeContenido.crearContenido(contenidoRaw);
+        // Guardar estado previo para poder hacer rollback si hay error
+        Contenido contenidoPrevio = celda.getContenido();
+        Valor valorPrevio = celda.getValor();
+        Set<Coordenada> depsPrevias = Set.copyOf(hoja.getDependenciasDe(coord));
 
-        // 4) Asignar contenido a la celda (esto actualiza valor "por defecto")
-        celda.setContenido(contenido);
+        try {
+            // 3) Identificar y crear contenido
+            Contenido contenido = IdentificadorDeContenido.crearContenido(contenidoRaw);
 
-        // 5) Si es fórmula -> registrar dependencias y evaluar
-        if (contenido instanceof ContenidoFormula) {
-            String expr = ((ContenidoFormula) contenido).getExpresion();
+            // 4) Si es fórmula -> registrar dependencias, validar y evaluar ANTES de aplicar cambios
+            if (contenido instanceof ContenidoFormula) {
+                String expr = ((ContenidoFormula) contenido).getExpresion();
 
-            // 5.1) Extraer dependencias directas de la fórmula y registrarlas en la hoja
-            List<Token> tokens = Tokenizer.tokenize(expr);
-            Set<Coordenada> deps = CalculadoraDeDependencias.extraerDependencias(tokens);
-            hoja.setDependencias(coord, deps);
+                // 4.1) Extraer dependencias directas de la fórmula y registrarlas en la hoja
+                List<Token> tokens = Tokenizer.tokenize(expr);
+                Set<Coordenada> deps = CalculadoraDeDependencias.extraerDependencias(tokens);
+                hoja.setDependencias(coord, deps);
 
-            if (CalculadoraDeDependencias.hayDependenciaCircular(hoja, coord)) {
-            throw new IllegalArgumentException("Dependencia circular detectada");
+                // 4.2) Detectar dependencia circular
+                if (CalculadoraDeDependencias.hayDependenciaCircular(hoja, coord)) {
+                    throw new IllegalArgumentException("Dependencia circular detectada");
+                }
+
+                // 4.3) Evaluar la fórmula
+                double resultado = FormulaService.evaluate(expr, hoja);
+
+                // 4.4) Aplicar cambios solo si todo ha ido bien
+                celda.setContenido(contenido);
+                celda.setValor(Valor.numero(resultado));
+
+            } else {
+                // Si deja de ser fórmula, eliminamos dependencias previas
+                hoja.setDependencias(coord, Set.of());
+
+                // Aplicar contenido a la celda (esto actualiza valor "por defecto")
+                celda.setContenido(contenido);
+            }
+
+            // 5) Recalcular dependientes (Fase 3)
+            CalculadoraDeDependencias.recalcularDesde(hoja, coord);
+
+        } catch (RuntimeException ex) {
+            // Rollback: restaurar dependencias y estado previo de la celda
+            hoja.setDependencias(coord, depsPrevias);
+            celda.setContenido(contenidoPrevio);
+            celda.setValor(valorPrevio);
+            throw ex;
         }
-
-            // 5.2) Evaluar la fórmula y guardar su valor
-            double resultado = FormulaService.evaluate(expr, hoja);
-            celda.setValor(Valor.numero(resultado));
-        } else {
-            // Si deja de ser fórmula, eliminamos dependencias previas
-            hoja.setDependencias(coord, Set.of());
-        }
-
-        // 6) Recalcular dependientes (Fase 3)
-        CalculadoraDeDependencias.recalcularDesde(hoja, coord);
     }
 
     public Valor consultarValor(String coordenadaRaw) {
